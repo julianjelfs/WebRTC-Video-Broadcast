@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,user-scalable=no"
+    />
+    <title>People Parties Demo</title>
+
+    <style>
+      .container {
+        width: 60%;
+        margin-left: auto;
+        margin-right: auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 10px 10px;
+        grid-auto-flow: row;
+        grid-template-areas:
+          ". . ."
+          ". . .";
+      }
+
+      .box {
+        height: 600px;
+        text-align: center;
+        border: 1px dashed #191919;
+      }
+
+      .actions {
+        padding: 5px 10px;
+        background-color: darkslateblue;
+        margin-bottom: 10px;
+      }
+
+      .actions button {
+        padding: 5px;
+      }
+
+      .menu {
+        display: flex;
+        justify-content: center;
+      }
+    </style>
+
+    <script></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="box">
+        <iframe
+          src="https://jelfs-rtc-test.herokuapp.com/"
+          frameborder="0"
+          height="600px"
+        ></iframe>
+      </div>
+      <div class="box">
+        <iframe
+          src="https://jelfs-rtc-test.herokuapp.com/"
+          frameborder="0"
+          height="600px"
+        ></iframe>
+      </div>
+      <div class="box">
+        <iframe
+          src="https://jelfs-rtc-test.herokuapp.com/"
+          frameborder="0"
+          height="600px"
+        ></iframe>
+      </div>
+      <div class="box">
+        <iframe
+          src="https://jelfs-rtc-test.herokuapp.com/"
+          frameborder="0"
+          height="600px"
+        ></iframe>
+      </div>
+      <div class="box">
+        <iframe
+          src="https://jelfs-rtc-test.herokuapp.com/"
+          frameborder="0"
+          height="600px"
+        ></iframe>
+      </div>
+    </div>
+  </body>
+</html>
