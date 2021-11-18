@@ -93,17 +93,6 @@ function gotDevices(deviceInfos) {
   }
 }
 
-const mediaConstraints = {
-  video: {
-    facingMode: "environment",
-    frameRate: { min: 1, max: 15 },
-    width: 320,
-    height: 240,
-  },
-  // video: true,
-  audio: false,
-};
-
 function getStream() {
   if (window.stream) {
     window.stream.getTracks().forEach((track) => {
@@ -117,7 +106,16 @@ function getStream() {
     video: { deviceId: videoSource ? { exact: videoSource } : undefined },
   };
   return navigator.mediaDevices
-    .getUserMedia(mediaConstraints)
+    .getUserMedia({
+      video: {
+        facingMode: "environment",
+        frameRate: { min: 1, max: 15 },
+        width: 320,
+        height: 240,
+      },
+      // video: true,
+      audio: false,
+    })
     .then(gotStream)
     .catch(handleError);
 }
