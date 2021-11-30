@@ -1,63 +1,58 @@
+/* eslint-disable no-undef */
+
 let peerConnection;
 const config = {
   iceServers: [
-      { 
-        "urls": "stun:stun.l.google.com:19302",
-      },
-      // { 
-      //   "urls": "turn:TURN_IP?transport=tcp",
-      //   "username": "TURN_USERNAME",
-      //   "credential": "TURN_CREDENTIALS"
-      // }
-  ]
+    {
+      urls: "stun:testnet.dfinity.network:5349",
+      username: "anon",
+      credential: "anon",
+    },
+    {
+      urls: "turn:testnet.dfinity.network:5349",
+      username: "anon",
+      credential: "anon",
+    },
+  ],
 };
 
 const socket = io.connect(window.location.origin);
-const video = document.querySelector("video");
-const enableAudioButton = document.querySelector("#enable-audio");
-
-enableAudioButton.addEventListener("click", enableAudio)
+const audio = document.querySelector("audio");
 
 socket.on("offer", (id, description) => {
   peerConnection = new RTCPeerConnection(config);
   peerConnection
     .setRemoteDescription(description)
     .then(() => peerConnection.createAnswer())
-    .then(sdp => peerConnection.setLocalDescription(sdp))
+    .then((sdp) => peerConnection.setLocalDescription(sdp))
     .then(() => {
       socket.emit("answer", id, peerConnection.localDescription);
     });
-  peerConnection.ontrack = event => {
-    video.srcObject = event.streams[0];
+  peerConnection.ontrack = (event) => {
+    audio.srcObject = event.streams[0];
   };
-  peerConnection.onicecandidate = event => {
+  peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
       socket.emit("candidate", id, event.candidate);
     }
   };
 });
 
-
 socket.on("candidate", (id, candidate) => {
   peerConnection
     .addIceCandidate(new RTCIceCandidate(candidate))
-    .catch(e => console.error(e));
+    .catch((e) => console.error(e));
 });
 
 socket.on("connect", () => {
-  socket.emit("watcher");
+  socket.emit("callee");
 });
 
-socket.on("broadcaster", () => {
-  socket.emit("watcher");
+socket.on("caller", () => {
+  socket.emit("callee");
 });
 
 window.onunload = window.onbeforeunload = () => {
   socket.close();
   peerConnection.close();
 };
-
-function enableAudio() {
-  console.log("Enabling audio")
-  video.muted = false;
-}

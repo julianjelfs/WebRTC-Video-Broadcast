@@ -5,17 +5,16 @@
     <meta charset="UTF-8" />
   </head>
   <body>
-    <section class="select">
-      <label for="audioSource">Audio source: </label>
-      <select id="audioSource"></select>
-    </section>
+    <h1>This is the caller page</h1>
 
-    <section class="select">
-      <label for="videoSource">Video source: </label>
-      <select id="videoSource"></select>
-    </section>
+    <label>You are: </label>
+    <strong><p id="yourName"></p></strong>
 
-    <video playsinline autoplay muted></video>
+    <label>You call: </label>
+    <strong><p id="youCall"></p></strong>
+    <p><button id="call">Call others</button></p>
+    <audio id="my-audio" playsinline autoplay controls></audio>
+    <div id="audio-wrapper"></div>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/broadcast.js"></script>
   </body>

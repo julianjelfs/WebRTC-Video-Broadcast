@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 const peerConnections = {};
 const config = {
   iceServers: [
@@ -12,47 +13,150 @@ const config = {
       credential: "anon",
     },
   ],
-  // iceServers: [
-  //   {
-  //     urls: "stun:stun.l.google.com:19302",
-  //   },
-  //   // {
-  //   //   "urls": "turn:TURN_IP?transport=tcp",
-  //   //   "username": "TURN_USERNAME",
-  //   //   "credential": "TURN_CREDENTIALS"
-  //   // }
-  // ],
 };
 
 const socket = io.connect(window.location.origin);
+
+const allNames = ["largewheel", "rugbyconfront", "hopglaring", "delightgod"];
+
+const yourName =
+  new URLSearchParams(window.location.search).get("name") || "largewheel";
+
+const youCall = allNames.slice(allNames.indexOf(yourName) + 1);
+
+const yourNameEl = document.getElementById("yourName");
+const youCallEl = document.getElementById("youCall");
+const callOthersBtn = document.getElementById("call");
+const myAudio = document.getElementById("my-audio");
+const theirAudio = document.getElementById("audio-wrapper");
+
+let peerSockets = {};
+let peerSocketsByName = {};
+let myStream;
+
+if (yourNameEl) {
+  yourNameEl.textContent = yourName;
+}
+
+if (youCallEl) {
+  youCallEl.textContent = youCall.join(", ");
+}
+
+if (callOthersBtn) {
+  callOthersBtn.addEventListener("click", () => {
+    youCall.forEach((name) => {
+      const peerSocket = peerSocketsByName[name];
+      if (peerSocket) {
+        console.log("creating connection to ", name);
+        const peerConnection = new RTCPeerConnection(config);
+        peerConnections[peerSocket.id] = peerConnection;
+
+        // add the audio tracks from the stream to the
+        myStream
+          .getTracks()
+          .forEach((track) => peerConnection.addTrack(track, myStream));
+
+        peerConnection.onicecandidate = (event) => {
+          if (event.candidate) {
+            socket.emit("candidate", peerSocket.id, event.candidate);
+          }
+        };
+
+        peerConnection
+          .createOffer()
+          .then((sdp) => peerConnection.setLocalDescription(sdp))
+          .then(() => {
+            socket.emit(
+              "offer",
+              peerSocket.id,
+              peerConnection.localDescription
+            );
+          });
+      }
+    });
+  });
+}
+
+socket.on("peersReady", (peers) => {
+  console.log("Peers ready so far: ", peers);
+  peerSockets = peers.reduce((agg, peer) => {
+    agg[peer.id] = peer;
+    return agg;
+  }, {});
+  peerSocketsByName = peers.reduce((agg, peer) => {
+    agg[peer.name] = peer;
+    return agg;
+  }, {});
+  const allConnected = allNames.every((n) => peers.includes(n));
+  // callOthersBtn.disabled = !allConnected;
+});
 
 socket.on("answer", (id, description) => {
   peerConnections[id].setRemoteDescription(description);
 });
 
-socket.on("watcher", (id) => {
+socket.on("offer", (id, description) => {
+  const peerSocket = peerSockets[id];
+  console.log(yourName, " received an offer from ", peerSocket.name);
   const peerConnection = new RTCPeerConnection(config);
   peerConnections[id] = peerConnection;
 
-  let stream = videoElement.srcObject;
-  stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
+  // does this make it bi-directional
+  myStream
+    .getTracks()
+    .forEach((track) => peerConnection.addTrack(track, myStream));
 
+  peerConnection
+    .setRemoteDescription(description)
+    .then(() => peerConnection.createAnswer())
+    .then((sdp) => peerConnection.setLocalDescription(sdp))
+    .then(() => {
+      socket.emit("answer", id, peerConnection.localDescription);
+    });
+  peerConnection.ontrack = (event) => {
+    let audio = document.getElementById(`audio_${peerSocket.name}`);
+    if (!audio) {
+      audio = document.createElement("audio");
+      audio.id = `audio_${peerSocket.name}`;
+      theirAudio.appendChild(audio);
+    }
+    audio.autoplay = true;
+    audio.controls = true;
+    audio.title = peerSocket.name;
+    audio.srcObject = event.streams[0];
+  };
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
       socket.emit("candidate", id, event.candidate);
     }
   };
-
-  peerConnection
-    .createOffer()
-    .then((sdp) => peerConnection.setLocalDescription(sdp))
-    .then(() => {
-      socket.emit("offer", id, peerConnection.localDescription);
-    });
 });
 
+// socket.on("callee", (id) => {
+//   const peerConnection = new RTCPeerConnection(config);
+//   peerConnections[id] = peerConnection;
+
+//   let stream = audioElement.srcObject;
+//   stream.getTracks().forEach((track) => peerConnection.addTrack(track, stream));
+
+//   peerConnection.onicecandidate = (event) => {
+//     if (event.candidate) {
+//       socket.emit("candidate", id, event.candidate);
+//     }
+//   };
+
+//   peerConnection
+//     .createOffer()
+//     .then((sdp) => peerConnection.setLocalDescription(sdp))
+//     .then(() => {
+//       socket.emit("offer", id, peerConnection.localDescription);
+//     });
+// });
+
 socket.on("candidate", (id, candidate) => {
-  peerConnections[id].addIceCandidate(new RTCIceCandidate(candidate));
+  peerConnections[id]
+    .addIceCandidate(new RTCIceCandidate(candidate))
+    .catch((e) => console.error(e));
 });
 
 socket.on("disconnectPeer", (id) => {
@@ -65,33 +169,7 @@ window.onunload = window.onbeforeunload = () => {
 };
 
 // Get camera and microphone
-const videoElement = document.querySelector("video");
-const audioSelect = document.querySelector("select#audioSource");
-const videoSelect = document.querySelector("select#videoSource");
-
-audioSelect.onchange = getStream;
-videoSelect.onchange = getStream;
-
-getStream().then(getDevices).then(gotDevices);
-
-function getDevices() {
-  return navigator.mediaDevices.enumerateDevices();
-}
-
-function gotDevices(deviceInfos) {
-  window.deviceInfos = deviceInfos;
-  for (const deviceInfo of deviceInfos) {
-    const option = document.createElement("option");
-    option.value = deviceInfo.deviceId;
-    if (deviceInfo.kind === "audioinput") {
-      option.text = deviceInfo.label || `Microphone ${audioSelect.length + 1}`;
-      audioSelect.appendChild(option);
-    } else if (deviceInfo.kind === "videoinput") {
-      option.text = deviceInfo.label || `Camera ${videoSelect.length + 1}`;
-      videoSelect.appendChild(option);
-    }
-  }
-}
+getStream();
 
 function getStream() {
   if (window.stream) {
@@ -99,37 +177,29 @@ function getStream() {
       track.stop();
     });
   }
-  const audioSource = audioSelect.value;
-  const videoSource = videoSelect.value;
-  const constraints = {
-    audio: { deviceId: audioSource ? { exact: audioSource } : undefined },
-    video: { deviceId: videoSource ? { exact: videoSource } : undefined },
-  };
   return navigator.mediaDevices
     .getUserMedia({
-      video: {
-        facingMode: "environment",
-        frameRate: { min: 1, max: 15 },
-        width: 320,
-        height: 240,
-      },
+      // video: {
+      //   facingMode: "environment",
+      //   frameRate: { min: 1, max: 15 },
+      //   width: 320,
+      //   height: 240,
+      // },
       // video: true,
-      audio: false,
+      audio: true,
     })
     .then(gotStream)
     .catch(handleError);
 }
 
 function gotStream(stream) {
-  window.stream = stream;
-  audioSelect.selectedIndex = [...audioSelect.options].findIndex(
-    (option) => option.text === stream.getAudioTracks()[0].label
-  );
-  videoSelect.selectedIndex = [...videoSelect.options].findIndex(
-    (option) => option.text === stream.getVideoTracks()[0].label
-  );
-  videoElement.srcObject = stream;
-  socket.emit("broadcaster");
+  myStream = stream;
+
+  // so we have our audio stream - we now need to to call everyone with a higher index than us
+  myAudio.srcObject = stream;
+
+  // socket.emit("caller");
+  socket.emit("peerReady", yourName);
 }
 
 function handleError(error) {
