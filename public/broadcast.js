@@ -60,6 +60,13 @@ if (callOthersBtn) {
           createAudioElement(peerSocket.name, event);
 
         peerConnection.onicecandidate = (event) => {
+          console.log(
+            yourName,
+            " received ice candidate for ",
+            name,
+            ": ",
+            event
+          );
           if (event.candidate) {
             socket.emit("candidate", peerSocket.id, event.candidate);
           }
