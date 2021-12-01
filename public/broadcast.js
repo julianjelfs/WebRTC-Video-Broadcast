@@ -196,7 +196,7 @@ function gotStream(stream) {
   myStream = stream;
 
   // so we have our audio stream - we now need to to call everyone with a higher index than us
-  myAudio.srcObject = stream;
+  //myAudio.srcObject = stream;
 
   // socket.emit("caller");
   socket.emit("peerReady", yourName);
