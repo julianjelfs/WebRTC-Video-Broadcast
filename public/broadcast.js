@@ -86,7 +86,9 @@ socket.on("peersReady", (peers) => {
     agg[peer.name] = peer;
     return agg;
   }, {});
-  const allConnected = allNames.every((n) => peers.includes(n));
+  const allConnected = allNames.every(
+    (n) => peers.find((p) => p.name === n) !== undefined
+  );
   callOthersBtn.disabled = !allConnected;
 });
 
