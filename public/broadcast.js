@@ -28,6 +28,7 @@ const yourNameEl = document.getElementById("yourName");
 const youCallEl = document.getElementById("youCall");
 const callOthersBtn = document.getElementById("call");
 const theirAudio = document.getElementById("audio-wrapper");
+const myAudio = document.getElementById("my-audio");
 
 let peerSockets = {};
 let peerSocketsByName = {};
@@ -197,7 +198,7 @@ function gotStream(stream) {
   myStream = stream;
 
   // so we have our audio stream - we now need to to call everyone with a higher index than us
-  //myAudio.srcObject = stream;
+  myAudio.srcObject = stream;
 
   // socket.emit("caller");
   socket.emit("peerReady", yourName);
