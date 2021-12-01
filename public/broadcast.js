@@ -28,7 +28,7 @@ const yourNameEl = document.getElementById("yourName");
 const youCallEl = document.getElementById("youCall");
 const callOthersBtn = document.getElementById("call");
 const theirAudio = document.getElementById("audio-wrapper");
-const myAudio = document.getElementById("my-audio");
+// const myAudio = document.getElementById("my-audio");
 
 let peerSockets = {};
 let peerSocketsByName = {};
@@ -55,6 +55,9 @@ if (callOthersBtn) {
         myStream
           .getTracks()
           .forEach((track) => peerConnection.addTrack(track, myStream));
+
+        peerConnection.ontrack = (event) =>
+          createAudioElement(peerSocket.name, event);
 
         peerConnection.onicecandidate = (event) => {
           if (event.candidate) {
@@ -115,24 +118,27 @@ socket.on("offer", (id, description) => {
     .then(() => {
       socket.emit("answer", id, peerConnection.localDescription);
     });
-  peerConnection.ontrack = (event) => {
-    let audio = document.getElementById(`audio_${peerSocket.name}`);
-    if (!audio) {
-      audio = document.createElement("audio");
-      audio.id = `audio_${peerSocket.name}`;
-      theirAudio.appendChild(audio);
-    }
-    audio.autoplay = true;
-    audio.controls = true;
-    audio.title = peerSocket.name;
-    audio.srcObject = event.streams[0];
-  };
+  peerConnection.ontrack = (event) =>
+    createAudioElement(peerSocket.name, event);
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
       socket.emit("candidate", id, event.candidate);
     }
   };
 });
+
+function createAudioElement(name, event) {
+  let audio = document.getElementById(`audio_${name}`);
+  if (!audio) {
+    audio = document.createElement("audio");
+    audio.id = `audio_${name}`;
+    theirAudio.appendChild(audio);
+  }
+  audio.autoplay = true;
+  audio.controls = true;
+  audio.title = name;
+  audio.srcObject = event.streams[0];
+}
 
 // socket.on("callee", (id) => {
 //   const peerConnection = new RTCPeerConnection(config);
@@ -198,7 +204,7 @@ function gotStream(stream) {
   myStream = stream;
 
   // so we have our audio stream - we now need to to call everyone with a higher index than us
-  myAudio.srcObject = stream;
+  //myAudio.srcObject = stream;
 
   // socket.emit("caller");
   socket.emit("peerReady", yourName);
