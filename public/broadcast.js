@@ -89,7 +89,7 @@ socket.on("peersReady", (peers) => {
   const allConnected = allNames.every(
     (n) => peers.find((p) => p.name === n) !== undefined
   );
-  callOthersBtn.disabled = !allConnected;
+  // callOthersBtn.disabled = !allConnected;
 });
 
 socket.on("answer", (id, description) => {
