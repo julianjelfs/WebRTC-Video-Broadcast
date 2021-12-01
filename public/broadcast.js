@@ -27,7 +27,6 @@ const youCall = allNames.slice(allNames.indexOf(yourName) + 1);
 const yourNameEl = document.getElementById("yourName");
 const youCallEl = document.getElementById("youCall");
 const callOthersBtn = document.getElementById("call");
-const myAudio = document.getElementById("my-audio");
 const theirAudio = document.getElementById("audio-wrapper");
 
 let peerSockets = {};
@@ -88,7 +87,7 @@ socket.on("peersReady", (peers) => {
     return agg;
   }, {});
   const allConnected = allNames.every((n) => peers.includes(n));
-  // callOthersBtn.disabled = !allConnected;
+  callOthersBtn.disabled = !allConnected;
 });
 
 socket.on("answer", (id, description) => {
